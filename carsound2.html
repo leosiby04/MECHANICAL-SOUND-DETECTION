@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A.I Mechanical Sound Detector</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f7f7f7;
+    }
+
+    /* Book-style container */
+    .book-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 10px;
+    }
+
+    .book {
+      width: 400px;
+      height: 300px;
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .book h1 {
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #4A4A4A;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .book p {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #4A4A4A;
+      background: linear-gradient(45deg, #f6d365, #fda085);
+      padding: 20px;
+      border-radius: 10px;
+      width: 100%;
+      text-transform: capitalize;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Smooth hover effect for button */
+    .btn {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Animation for button hover */
+    .btn {
+      background: linear-gradient(90deg, #ff7e5f, #feb47b);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="book-container">
+    <div class="book">
+      <h1>A.I Mechanical Sound Detector</h1>
+      <button 
+        class="btn text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-600 transition duration-200"
+        onclick="init()">Start Listening</button>
+      <div id="label-container" class="mt-6">
+        <p>Connecting to ESP32...</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    const URL = "https://teachablemachine.withgoogle.com/models/U8KHJRree/";
+
+    async function createModel() {
+      const checkpointURL = URL + "model.json"; // model topology
+      const metadataURL = URL + "metadata.json"; // model metadata
+
+      const recognizer = speechCommands.create(
+        "BROWSER_FFT",
+        undefined,
+        checkpointURL,
+        metadataURL
+      );
+
+      // Ensure model is loaded
+      await recognizer.ensureModelLoaded();
+      return recognizer;
+    }
+
+    async function init() {
+      const recognizer = await createModel();
+      const classLabels = recognizer.wordLabels(); // Get class labels
+      const labelContainer = document.getElementById("label-container");
+
+      labelContainer.innerHTML = '<p>Connecting to ESP32...</p>'; // Show connecting status
+
+      // Start listening
+      recognizer.listen(result => {
+        const scores = result.scores;
+        // Find the label with the highest probability
+        const maxScoreIndex = scores.indexOf(Math.max(...scores));
+        const prominentLabel = classLabels[maxScoreIndex]; // Display only the label
+
+        // Update the label container with the prominent prediction in book-style
+        labelContainer.innerHTML = `<p>${prominentLabel}</p>`;
+      }, {
+        probabilityThreshold: 0.75,
+        invokeCallbackOnNoiseAndUnknown: true,
+        overlapFactor: 0.50
+      });
+    }
+  </script>
+
+</body>
+</html>
